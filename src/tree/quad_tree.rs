@@ -1,16 +1,19 @@
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use tree::quad_node::QuadNode;
 use shapes::bounding_box::BoundingBox;
-use shapes::bounding_box_split::BoundingBoxSplit;
-use shapes::bounding_tree_node::BoundingTreeNode;
-use Result;
+use shapes::partition::Partition;
+use shapes::tree_node::TreeNode;
+use { Result, QuadError };
 
+#[derive(Clone)]
 pub struct QuadTree<B>
-    where B: BoundingBoxSplit {
+    where B: Partition {
     root: Box<QuadNode<B>>
 }
 
 impl<B> QuadTree<B>
-    where B: BoundingBoxSplit {
+    where B: Partition {
     pub fn new(bounds: B) -> QuadTree<B> {
         QuadTree { 
             root: Box::new(
@@ -21,7 +24,7 @@ impl<B> QuadTree<B>
 }
 
 impl<B> BoundingBox for QuadTree<B> 
-    where B: BoundingBoxSplit {
+    where B: Partition {
     type T = B::T;
 
     fn includes(&self, item: &Self::T) -> bool {
@@ -33,14 +36,25 @@ impl<B> BoundingBox for QuadTree<B>
     }
 }
 
-impl<B> BoundingTreeNode for QuadTree<B> 
-    where B: BoundingBoxSplit {
+impl<B> TreeNode<B::T> for QuadTree<B> 
+    where B: Partition {
     
-    fn insert(&mut self, item: Self::T) -> Result<()> {
+    fn insert(&mut self, item: B::T) -> Result<()> {
+        if !self.includes(&item) {
+            return Err(QuadError::OutOfBounds)
+        }
+
         self.root.insert(item)
     }
 
-    fn retrieve(&self, item: &Self::T) -> Vec<Self::T> {
-        Vec::new()
+    fn retrieve(&self, item: &B::T) -> Vec<B::T> {
+        self.root.retrieve(item)
+    }
+}
+
+impl<B> Display for QuadTree<B>
+    where B: Partition {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "QuadTree()")
     }
 }

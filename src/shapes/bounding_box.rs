@@ -1,5 +1,7 @@
-pub trait BoundingBox: Sized {
-    type T: BoundingBox + Clone;
+use std::fmt::Display;
+
+pub trait BoundingBox: Sized + Clone + Display {
+    type T: BoundingBox;
 
     fn intersects(&self, &Self::T) -> bool;
 

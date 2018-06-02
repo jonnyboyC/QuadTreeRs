@@ -27,7 +27,7 @@ impl<T: Float> Add for Vec2<T> {
 
 impl<T: Float + Display> fmt::Display for Vec2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {})", self.x, self.y)
+        write!(f, "({:.2}, {:.2})", self.x, self.y)
     }
 }
 
@@ -57,7 +57,7 @@ mod tests {
     fn vec2_display() {
         let a = Vec2::new(0.0, 10.0);
 
-        assert_eq!(a.to_string(), "(0, 10)")
+        assert_eq!(a.to_string(), "(0.00, 10.00)")
     }
 }
 
