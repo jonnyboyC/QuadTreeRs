@@ -1,4 +1,5 @@
 use std::fmt;
+use std::iter::Iterator;
 use std::fmt::{Display, Formatter};
 use shapes::partition::Partition;
 use shapes::tree_node::TreeNode;
@@ -47,14 +48,20 @@ impl<B> QuadNode<B>
             .collect();
 
         let mut remaining = Vec::new();
-        for item in &self.items {
-            match self.bounds.get_partition(&item) {
-                Some(index) => {
-                    children[index].items.push(item.clone())
-                },
-                None => remaining.push(item.clone()) 
-            }
-        }
+        let a = self.items
+            .into_iter()
+            .group_by(|item| self.bounds.get_partition(item))
+            .collect();
+
+
+        // for item in self.items.into_iter() {
+        //     match self.bounds.get_partition(&item) {
+        //         Some(index) => {
+        //             children[index].items.push(item)
+        //         },
+        //         None => remaining.push(item) 
+        //     }
+        // }
 
         self.nodes = Some(children);
         self.items = remaining;
@@ -69,32 +76,20 @@ impl<B> QuadNode<B>
         }
     }
 
-    fn retrieve_all(&self, accumulator: &mut Vec<B::T>) {
-        if self.nodes.is_some() {
-            for node in self.nodes.unwrap() {
-                node.retrieve_all(accumulator)
-            }
-        }
+    fn retrieve_all(&self) -> Vec<&B::T> {
+        let mut accumulator = Vec::new();
 
-        accumulator.extend(self.items.iter().map(|x| x.clone()))
-    }
-
-    fn retrieve(&self, item: &B::T, accumulator: &mut Vec<B::T>) {
         match self.nodes {
-            Some(ref mut nodes) => {
-                match self.bounds.get_partition(&item) {
-                    Some(index) => nodes[index].retrieve(item, accumulator),
-                    None => {
-                        for node in nodes {
-                            node.retrieve_all(accumulator);
-                        }
-                    }
-                }
-            },
+            Some(ref nodes) => {
+                accumulator.extend(nodes
+                    .iter()
+                    .flat_map(|n| n.retrieve_all()))
+            }
             None => ()
         }
- 
-        accumulator.extend(self.items.iter().map(|x| x.clone()));
+
+        accumulator.extend(self.items.iter());
+        accumulator
     }
 }
 
@@ -141,10 +136,28 @@ impl<B> TreeNode<B::T> for QuadNode<B>
         Ok(())
     }
 
-    fn retrieve(&self, item: &B::T) -> Vec<B::T> {
+    fn retrieve(&self, item: &B::T) -> Vec<&B::T> {
         let mut accumulator = Vec::new();
-        self.retrieve(item, &mut accumulator);
 
+        match self.nodes {
+            Some(ref nodes) => {
+                match self.bounds.get_partition(&item) {
+                    Some(index) => {
+                        let match_node = &nodes[index];
+                        accumulator.extend(match_node.retrieve(item))
+                    },
+                    None => {
+                        accumulator.extend(nodes
+                            .iter()
+                            .flat_map(|n| n.retrieve_all())
+                        )
+                    }
+                }
+            },
+            None => ()
+        }
+
+        accumulator.extend(self.items.iter());
         accumulator
     }
 }

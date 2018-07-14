@@ -21,6 +21,18 @@ impl<B> QuadTree<B>
             ) 
         }
     }
+        
+    fn insert(&mut self, item: B::T) -> Result<()> {
+        if !self.includes(&item) {
+            return Err(QuadError::OutOfBounds)
+        }
+
+        self.root.insert(item)
+    }
+
+    fn retrieve(&self, item: &B::T) -> Vec<&B::T> {
+        self.root.retrieve(item)
+    }
 }
 
 impl<B> BoundingBox for QuadTree<B> 
@@ -33,22 +45,6 @@ impl<B> BoundingBox for QuadTree<B>
 
     fn intersects(&self, item: &Self::T) -> bool {
         self.root.intersects(&item)
-    }
-}
-
-impl<B> TreeNode<B::T> for QuadTree<B> 
-    where B: Partition {
-    
-    fn insert(&mut self, item: B::T) -> Result<()> {
-        if !self.includes(&item) {
-            return Err(QuadError::OutOfBounds)
-        }
-
-        self.root.insert(item)
-    }
-
-    fn retrieve(&self, item: &B::T) -> Vec<B::T> {
-        self.root.retrieve(item)
     }
 }
 
